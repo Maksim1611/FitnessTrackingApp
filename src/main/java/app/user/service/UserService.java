@@ -1,11 +1,15 @@
 package app.user.service;
 
+import app.exception.DuplicateResourceException;
 import app.exception.ResourceNotFoundException;
 import app.security.AuthenticationMetadata;
 import app.user.model.User;
 import app.user.model.UserRole;
 import app.user.repository.UserRepository;
+import app.utils.DtoMapper;
 import app.web.dto.auth.RegisterRequest;
+import app.web.dto.user.EditProfileRequest;
+import app.web.dto.user.UserResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,6 +41,7 @@ public class UserService implements UserDetailsService {
         return AuthenticationMetadata.builder()
                 .name(user.getName())
                 .email(user.getEmail())
+                .username(user.getUsername())
                 .role(user.getRole())
                 .password(user.getPassword())
                 .id(user.getId())
@@ -48,13 +53,14 @@ public class UserService implements UserDetailsService {
         Optional<User> optional = userRepository.findByEmail(request.email());
 
         if (optional.isPresent()) {
-            throw new RuntimeException("Email already in use");
+            throw new DuplicateResourceException("Email already in use");
         }
 
         User user = User.builder()
                 .name(request.name())
                 .email(request.email())
                 .role(UserRole.USER)
+                .username(request.username())
                 .createdOn(LocalDateTime.now())
                 .updatedOn(LocalDateTime.now())
                 .followers(0)
@@ -69,5 +75,26 @@ public class UserService implements UserDetailsService {
 
     public User getUserById(UUID id) {
         return this.userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    public UserResponse updateProfile(UUID userId, EditProfileRequest request) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (request.email() != null && !request.email().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(user.getEmail())) {
+                throw new DuplicateResourceException("Email is already in use");
+            }
+        }
+
+        if (request.username() != null && !request.username().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(request.username())) {
+                throw new DuplicateResourceException("Username is already in use");
+            }
+        }
+
+        DtoMapper.updateUserFromRequest(user,request);
+        User savedUser = userRepository.save(user);
+
+        return DtoMapper.toUserResponse(savedUser);
     }
 }

@@ -28,6 +28,10 @@ public class User {
     @Column(unique = true, nullable = false)
     private String name;
 
+    @Size(min = 3)
+    @Column(unique = true, nullable = false)
+    private String username;
+
     @Email
     @Column(nullable = false, unique = true)
     private String email;
@@ -42,8 +46,13 @@ public class User {
 
     private String imageUrl;
 
-    @Column(nullable = false)
+    @Column(updatable = false)
     private LocalDateTime createdOn;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdOn = LocalDateTime.now();
+    }
 
     @Column(nullable = false)
     private LocalDateTime updatedOn;

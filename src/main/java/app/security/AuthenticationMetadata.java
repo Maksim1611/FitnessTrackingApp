@@ -22,6 +22,7 @@ public class AuthenticationMetadata implements UserDetails {
 
     private UUID id;
     private String name;
+    private String username;
     private String password;
     private String email;
     private UserRole role;
