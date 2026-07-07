@@ -1,10 +1,12 @@
 package app.exercise.service;
 
+import app.exception.ResourceNotFoundException;
 import app.exercise.model.Exercise;
 import app.exercise.repository.ExerciseRepository;
 import app.user.model.User;
 import app.user.repository.UserRepository;
 import app.user.service.UserService;
+import app.utils.DtoMapper;
 import app.web.dto.exercise.ExerciseRequest;
 import app.web.dto.exercise.ExerciseResponse;
 import org.springframework.stereotype.Service;
@@ -41,23 +43,16 @@ public class ExerciseService {
 
         Exercise savedExercise = exerciseRepository.save(exercise);
 
-        return mapToResponse(savedExercise);
+        return DtoMapper.exerciseToResponse(savedExercise);
     }
 
     public List<ExerciseResponse> getExercisesByUserId(UUID id) {
         return exerciseRepository.findByCreatedById(id)
-                .stream().map(this::mapToResponse).collect(Collectors.toList());
+                .stream().map(DtoMapper::exerciseToResponse).collect(Collectors.toList());
     }
 
-    private ExerciseResponse mapToResponse(Exercise exercise) {
-        return new ExerciseResponse(
-                exercise.getId(),
-                exercise.getName(),
-                exercise.getExerciseType(),
-                exercise.getEquipment(),
-                exercise.getPrimaryMuscleGroup(),
-                exercise.getOtherMuscleGroups(),
-                exercise.getImageUrl()
-        );
+    public Exercise getExerciseById(UUID id) {
+        return exerciseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Exercise not found with id: " + id));
     }
+
 }

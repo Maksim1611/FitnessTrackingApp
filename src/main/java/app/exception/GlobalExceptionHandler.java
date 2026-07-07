@@ -34,4 +34,9 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", "An exercise with this name already exists"));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+
 }

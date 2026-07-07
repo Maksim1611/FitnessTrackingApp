@@ -24,9 +24,11 @@ public class RoutineSetTarget {
     @JoinColumn(name = "routine_exercise_id")
     private RoutineExercise routineExercise;
 
-    private int setNumber;
-    private double targetWeight;
-    private int targetDurationSeconds;
+    private Integer setNumber;
+    private Double targetWeight;
+    private Integer targetRepsMin;
+    private Integer targetRepsMax;
+    private Integer targetDurationSeconds;
 
     @Enumerated(EnumType.STRING)
     private SetType setType;

@@ -29,9 +29,9 @@ public class RoutineExercise {
     @JoinColumn(name = "exercise_id")
     private Exercise exercise;
 
-    private int exerciseOrder;
+    private Integer exerciseOrder;
     private String exerciseNote;
-    private int supersetGroupId;
+    private Integer supersetGroupId;
 
     @OneToMany(mappedBy = "routineExercise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoutineSetTarget> targetSets;

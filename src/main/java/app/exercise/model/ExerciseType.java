@@ -7,6 +7,7 @@ public enum ExerciseType {
 
     WEIGHT_REPS("Weight Reps"),
     REPS_ONLY("Reps Only"),
+    BODYWEIGHT("Bodyweight"),
     WEIGHTED_BODYWEIGHT("Weighted Bodyweight"),
     ASSISTED_BODYWEIGHT("Assisted Bodyweight"),
     DURATION("Duration"),

@@ -93,6 +93,7 @@ public class UserService implements UserDetailsService {
         }
 
         DtoMapper.updateUserFromRequest(user,request);
+        user.setUpdatedOn(LocalDateTime.now());
         User savedUser = userRepository.save(user);
 
         return DtoMapper.toUserResponse(savedUser);

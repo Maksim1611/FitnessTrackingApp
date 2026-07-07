@@ -30,12 +30,14 @@ public class WorkoutSet {
     @JoinColumn(name = "exercise_id", nullable = false)
     private Exercise exercise;
 
-    private double weight;
-    private int reps;
-    private int durationSeconds;
-    private double distance;
-
-    private int restSeconds;
+    private Integer setNumber;
+    private Double weight;
+    private Integer reps;
+    private Integer durationSeconds;
+    private Double rpe;
+    private Integer restSeconds;
+    private Integer supersetGroupId;
+    private Integer exerciseOrder;
 
     @Enumerated(EnumType.STRING)
     private SetType setType;

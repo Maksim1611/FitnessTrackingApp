@@ -27,7 +27,7 @@ public class Routine {
 
     private String name;
     private String notes;
-    private int folderOrder;
+    private Integer folderOrder;
 
     @OneToMany(mappedBy = "routine", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("exerciseOrder")
