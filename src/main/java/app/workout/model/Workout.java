@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,12 @@ public class Workout {
     @Column
     private String name;
 
-    @OneToMany(mappedBy = "workout")
-   private List<WorkoutSet> workoutSets;
+    @Column(nullable = false)
+    private LocalDateTime startedAt;
+
+    private LocalDateTime finishedAt;
+
+    @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("exerciseOrder")
+    private List<WorkoutSet> workoutSets;
 }

@@ -48,11 +48,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
-            // Bad/stale token — just don't authenticate, let downstream rules decide
             SecurityContextHolder.clearContext();
         }
 
-        System.out.println("Filter hit: " + request.getRequestURI() + " | Auth header: " + request.getHeader("Authorization"));
         filterChain.doFilter(request, response);
     }
 }

@@ -81,7 +81,7 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (request.email() != null && !request.email().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(user.getEmail())) {
+            if (userRepository.existsByEmail(request.email())) {
                 throw new DuplicateResourceException("Email is already in use");
             }
         }
@@ -93,6 +93,11 @@ public class UserService implements UserDetailsService {
         }
 
         DtoMapper.updateUserFromRequest(user,request);
+
+        if (request.password() != null && !request.password().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.password()));
+        }
+
         user.setUpdatedOn(LocalDateTime.now());
         User savedUser = userRepository.save(user);
 

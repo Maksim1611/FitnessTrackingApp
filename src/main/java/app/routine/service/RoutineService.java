@@ -23,6 +23,7 @@ import app.web.dto.routineSetTarget.RoutineSetTargetRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,6 +58,7 @@ public class RoutineService {
                 .build();
 
         Routine savedRoutine = routineRepository.save(routine);
+        List<RoutineExercise> savedExercises = new ArrayList<>();
 
         for (RoutineExerciseRequest exerciseRequest : request.exercises()) {
             Exercise exercise = exerciseService.getExerciseById(exerciseRequest.exerciseId());
@@ -70,6 +72,7 @@ public class RoutineService {
                     .build();
 
             RoutineExercise savedRoutineExercise = routineExerciseRepository.save(routineExercise);
+            List<RoutineSetTarget> savedSets = new ArrayList<>();
 
             for (RoutineSetTargetRequest setRequest : exerciseRequest.sets()) {
                 validateSetTarget(setRequest, exercise.getExerciseType());
@@ -84,9 +87,14 @@ public class RoutineService {
                         setType(setRequest.setType()).
                         build();
 
-                routineSetTargetRepository.save(routineSetTarget);
+                savedSets.add(routineSetTargetRepository.save(routineSetTarget));
             }
+
+            savedRoutineExercise.setTargetSets(savedSets);
+            savedExercises.add(savedRoutineExercise);
         }
+
+        savedRoutine.setExercises(savedExercises);
 
         return DtoMapper.mapToRoutineResponse(savedRoutine);
     }

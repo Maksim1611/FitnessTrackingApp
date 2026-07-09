@@ -9,6 +9,10 @@ import app.web.dto.routineExercise.RoutineExerciseResponse;
 import app.web.dto.routineSetTarget.RoutineSetTargetResponse;
 import app.web.dto.user.EditProfileRequest;
 import app.web.dto.user.UserResponse;
+import app.web.dto.workout.WorkoutResponse;
+import app.web.dto.workoutSet.WorkoutSetResponse;
+import app.workout.model.Workout;
+import app.workoutset.model.WorkoutSet;
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
@@ -19,6 +23,9 @@ public class DtoMapper {
     public static void updateUserFromRequest(User user, EditProfileRequest request) {
         if (request.name() != null && !request.name().isEmpty()) {
             user.setName(request.name());
+        }
+        if (request.username() != null && !request.username().isEmpty()) {
+            user.setUsername(request.username());
         }
         if (request.email() != null && !request.email().isEmpty()) {
             user.setEmail(request.email());
@@ -80,6 +87,40 @@ public class DtoMapper {
                 routine.getNotes(),
                 routine.getFolderOrder(),
                 exerciseResponses
+        );
+    }
+
+    public static WorkoutSetResponse toWorkoutSetResponse(WorkoutSet set) {
+        return new WorkoutSetResponse(
+                set.getId(),
+                set.getExercise().getId(),
+                set.getExercise().getName(),
+                set.getSetNumber(),
+                set.getWeight(),
+                set.getReps(),
+                set.getDurationSeconds(),
+                set.getRpe(),
+                set.getRestSeconds(),
+                set.getSupersetGroupId(),
+                set.getExerciseOrder(),
+                set.getSetType(),
+                set.isCompleted(),
+                set.getCompletedAt()
+        );
+    }
+
+    public static WorkoutResponse toWorkoutResponse(Workout workout) {
+        List<WorkoutSetResponse> sets = workout.getWorkoutSets() == null
+                ? List.of()
+                : workout.getWorkoutSets().stream().map(DtoMapper::toWorkoutSetResponse).toList();
+
+        return new WorkoutResponse(
+                workout.getId(),
+                workout.getName(),
+                workout.getRoutine() == null ? null : workout.getRoutine().getId(),
+                workout.getStartedAt(),
+                workout.getFinishedAt(),
+                sets
         );
     }
 }
