@@ -9,7 +9,6 @@ import app.exercise.model.MuscleGroup;
 import app.exercise.repository.ExerciseRepository;
 import app.routine.repository.RoutineExerciseRepository;
 import app.user.model.User;
-import app.user.repository.UserRepository;
 import app.user.service.UserService;
 import app.utils.DtoMapper;
 import app.web.dto.exercise.ExerciseRequest;

@@ -7,7 +7,6 @@ import app.routine.model.RoutineExercise;
 import app.user.model.User;
 import app.web.dto.exercise.ExerciseResponse;
 import app.web.dto.measurement.BodyMeasurementResponse;
-import app.web.dto.measurement.UpdateBodyMeasurementRequest;
 import app.web.dto.routine.RoutineResponse;
 import app.web.dto.routineExercise.RoutineExerciseResponse;
 import app.web.dto.routineSetTarget.RoutineSetTargetResponse;

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,4 +24,11 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
 
     @Query("SELECT MAX(ws.durationSeconds) FROM WorkoutSet ws WHERE ws.exercise.id = :exerciseId AND ws.workout.user.id = :userId AND ws.completed = true AND ws.id <> :excludeId")
     Integer findMaxDuration(@Param("exerciseId") UUID exerciseId, @Param("userId") UUID userId, @Param("excludeId") UUID excludeId);
+
+    @Query("SELECT ws FROM WorkoutSet ws WHERE ws.exercise.id = :exerciseId AND ws.workout.user.id = :userId AND ws.completed = true ORDER BY ws.workout.startedAt ASC")
+    List<WorkoutSet> findCompletedSetsForExercise(@Param("exerciseId") UUID exerciseId, @Param("userId") UUID userId);
+
+    @Query("SELECT ws FROM WorkoutSet ws WHERE ws.workout.user.id = :userId AND ws.completed = true AND ws.workout.startedAt >= :since")
+    List<WorkoutSet> findCompletedSetsSince(@Param("userId") UUID userId, @Param("since") LocalDateTime since);
+
 }

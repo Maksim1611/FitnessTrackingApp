@@ -5,7 +5,6 @@ import app.exercise.model.Exercise;
 import app.exercise.model.ExerciseType;
 import app.exercise.model.MuscleGroup;
 import app.user.model.User;
-import app.web.dto.exercise.ExerciseResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
