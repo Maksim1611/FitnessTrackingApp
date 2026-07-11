@@ -45,4 +45,6 @@ public class WorkoutSet {
     private boolean completed;
 
     private LocalDateTime completedAt;
+
+    private boolean isPersonalRecord;
 }

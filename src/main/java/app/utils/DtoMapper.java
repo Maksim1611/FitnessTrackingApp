@@ -1,9 +1,13 @@
 package app.utils;
 
 import app.exercise.model.Exercise;
+import app.measurement.model.BodyMeasurement;
 import app.routine.model.Routine;
+import app.routine.model.RoutineExercise;
 import app.user.model.User;
 import app.web.dto.exercise.ExerciseResponse;
+import app.web.dto.measurement.BodyMeasurementResponse;
+import app.web.dto.measurement.UpdateBodyMeasurementRequest;
 import app.web.dto.routine.RoutineResponse;
 import app.web.dto.routineExercise.RoutineExerciseResponse;
 import app.web.dto.routineSetTarget.RoutineSetTargetResponse;
@@ -61,24 +65,7 @@ public class DtoMapper {
     public static RoutineResponse mapToRoutineResponse(Routine routine) {
         List<RoutineExerciseResponse> exerciseResponses = routine.getExercises()
                 .stream()
-                .map(re -> new RoutineExerciseResponse(
-                        re.getId(),
-                        re.getExerciseOrder(),
-                        re.getExerciseNote(),
-                        re.getSupersetGroupId(),
-                        DtoMapper.exerciseToResponse(re.getExercise()),
-                        re.getTargetSets().stream()
-                                .map(s -> new RoutineSetTargetResponse(
-                                        s.getId(),
-                                        s.getSetNumber(),
-                                        s.getTargetWeight(),
-                                        s.getTargetRepsMin(),
-                                        s.getTargetRepsMax(),
-                                        s.getTargetDurationSeconds(),
-                                        s.getSetType()
-                                ))
-                                .toList()
-                ))
+                .map(DtoMapper::mapToRoutineExerciseResponse)
                 .toList();
 
         return new RoutineResponse(
@@ -105,7 +92,8 @@ public class DtoMapper {
                 set.getExerciseOrder(),
                 set.getSetType(),
                 set.isCompleted(),
-                set.getCompletedAt()
+                set.getCompletedAt(),
+                set.isPersonalRecord()
         );
     }
 
@@ -123,4 +111,46 @@ public class DtoMapper {
                 sets
         );
     }
+
+    public static RoutineExerciseResponse mapToRoutineExerciseResponse(RoutineExercise routineExercise) {
+        List<RoutineSetTargetResponse> setTargetResponses = routineExercise.getTargetSets().stream()
+                .map(s -> new RoutineSetTargetResponse(
+                        s.getId(),
+                        s.getSetNumber(),
+                        s.getTargetWeight(),
+                        s.getTargetRepsMin(),
+                        s.getTargetRepsMax(),
+                        s.getTargetDurationSeconds(),
+                        s.getSetType()
+                )).toList();
+
+        return new RoutineExerciseResponse(
+                routineExercise.getId(),
+                routineExercise.getExerciseOrder(),
+                routineExercise.getExerciseNote(),
+                routineExercise.getSupersetGroupId(),
+                DtoMapper.exerciseToResponse(routineExercise.getExercise()),
+                setTargetResponses
+        );
+    }
+
+    public static BodyMeasurementResponse toBodyMeasurementResponse(BodyMeasurement measurement) {
+        return new BodyMeasurementResponse(
+                measurement.getId(),
+                measurement.getRecordedAt(),
+                measurement.getWeight(),
+                measurement.getBodyFatPercentage(),
+                measurement.getNeck(),
+                measurement.getShoulders(),
+                measurement.getChest(),
+                measurement.getWaist(),
+                measurement.getHips(),
+                measurement.getBiceps(),
+                measurement.getThighs(),
+                measurement.getCalves(),
+                measurement.getNotes(),
+                measurement.getPhotoUrl()
+        );
+    }
+
 }

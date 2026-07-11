@@ -8,4 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface RoutineExerciseRepository extends JpaRepository<RoutineExercise, UUID> {
+
+    boolean existsByExercise_Id(UUID exerciseId);
 }

@@ -10,11 +10,13 @@ import app.routine.model.RoutineSetTarget;
 import app.routine.repository.RoutineExerciseRepository;
 import app.routine.repository.RoutineRepository;
 import app.routine.repository.RoutineSetTargetRepository;
+import app.web.dto.routineExercise.RoutineExerciseResponse;
+import app.web.dto.routineExercise.UpdateRoutineExerciseRequest;
+import app.workout.model.Workout;
+import app.workout.repository.WorkoutRepository;
 import app.user.model.User;
-import app.user.repository.UserRepository;
 import app.user.service.UserService;
 import app.utils.DtoMapper;
-import app.web.dto.exercise.ExerciseResponse;
 import app.web.dto.routine.RoutineRequest;
 import app.web.dto.routine.RoutineResponse;
 import app.web.dto.routine.UpdateRoutineRequest;
@@ -27,9 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static app.exercise.model.Equipment.BODYWEIGHT;
-import static app.exercise.model.ExerciseType.*;
-
 @Service
 public class RoutineService {
 
@@ -38,13 +37,15 @@ public class RoutineService {
     private final ExerciseService exerciseService;
     private final RoutineExerciseRepository routineExerciseRepository;
     private final RoutineSetTargetRepository routineSetTargetRepository;
+    private final WorkoutRepository workoutRepository;
 
-    public RoutineService(RoutineRepository routineRepository, UserService userService, ExerciseService exerciseService, RoutineExerciseRepository routineExerciseRepository, RoutineSetTargetRepository routineSetTargetRepository) {
+    public RoutineService(RoutineRepository routineRepository, UserService userService, ExerciseService exerciseService, RoutineExerciseRepository routineExerciseRepository, RoutineSetTargetRepository routineSetTargetRepository, WorkoutRepository workoutRepository) {
         this.routineRepository = routineRepository;
         this.userService = userService;
         this.exerciseService = exerciseService;
         this.routineExerciseRepository = routineExerciseRepository;
         this.routineSetTargetRepository = routineSetTargetRepository;
+        this.workoutRepository = workoutRepository;
     }
 
     public RoutineResponse createRoutine(RoutineRequest request, UUID userId) {
@@ -146,6 +147,11 @@ public class RoutineService {
         if (!routine.getUser().getId().equals(userId)) {
             throw new AccessDeniedException("You don't have access to this routine");
         }
+
+        List<Workout> workouts = workoutRepository.findAllByRoutine(routine);
+        workouts.forEach(workout -> workout.setRoutine(null));
+        workoutRepository.saveAll(workouts);
+
         routineRepository.delete(routine);
     }
 
@@ -168,5 +174,121 @@ public class RoutineService {
         }
 
         return DtoMapper.mapToRoutineResponse(routineRepository.save(routine));
+    }
+
+    public RoutineExerciseResponse addExerciseToRoutine(UUID routineId, RoutineExerciseRequest request, UUID userId) {
+        Routine routine = routineRepository.findById(routineId).orElseThrow(() -> new ResourceNotFoundException("Routine not found"));
+
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You don't have access to this routine");
+        }
+
+        Exercise exercise = exerciseService.getExerciseById(request.exerciseId());
+
+        RoutineExercise routineExercise = RoutineExercise.builder()
+                .routine(routine)
+                .exercise(exercise)
+                .exerciseOrder(request.exerciseOrder())
+                .supersetGroupId(request.supersetGroupId())
+                .exerciseNote(request.exerciseNote())
+                .build();
+
+        RoutineExercise savedRoutineExercise = routineExerciseRepository.save(routineExercise);
+
+        List<RoutineSetTarget> savedSets = new ArrayList<>();
+
+        for (RoutineSetTargetRequest setRequest : request.sets()) {
+            validateSetTarget(setRequest, exercise.getExerciseType());
+
+            RoutineSetTarget routineSetTarget = RoutineSetTarget.builder()
+                    .routineExercise(savedRoutineExercise)
+                    .setNumber(setRequest.setNumber())
+                    .targetWeight(setRequest.targetWeight())
+                    .targetRepsMin(setRequest.targetRepsMin())
+                    .targetDurationSeconds(setRequest.targetDurationSeconds())
+                    .setType(setRequest.setType())
+                    .targetRepsMax(setRequest.targetRepsMax())
+                    .build();
+
+            savedSets.add(routineSetTargetRepository.save(routineSetTarget));
+        }
+
+        savedRoutineExercise.setTargetSets(savedSets);
+
+        return DtoMapper.mapToRoutineExerciseResponse(savedRoutineExercise);
+    }
+
+    public Routine getRoutineById(UUID routineId) {
+        return routineRepository.findById(routineId).orElseThrow(() -> new ResourceNotFoundException("Routine not found"));
+    }
+
+    public void removeExerciseFromRoutine(UUID routineId, UUID routineExerciseId, UUID userId) {
+        Routine routine = getRoutineById(routineId);
+
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You don't have access to this routine");
+        }
+
+        RoutineExercise routineExercise = routineExerciseRepository.findById(routineExerciseId).
+                orElseThrow(() -> new ResourceNotFoundException("Exercise not found in this routine"));
+
+        if (!routineExercise.getRoutine().getId().equals(routineId)) {
+            throw new ResourceNotFoundException("Exercise not found in this routine");
+        }
+
+        routineExerciseRepository.delete(routineExercise);
+    }
+
+    public RoutineExercise getRoutineExerciseById(UUID routineExerciseId) {
+        return routineExerciseRepository.findById(routineExerciseId).orElseThrow(() -> new ResourceNotFoundException("Exercise not found in this routine"));
+    }
+
+    public RoutineExerciseResponse updateExerciseInRoutine(UUID routineId, UUID routineExerciseId,
+                                                           UpdateRoutineExerciseRequest request, UUID userId) {
+        Routine routine = this.getRoutineById(routineId);
+
+        if (!routine.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You don't have access to this routine");
+        }
+
+        RoutineExercise routineExercise = this.getRoutineExerciseById(routineExerciseId);
+
+        if (!routineExercise.getRoutine().getId().equals(routineId)) {
+            throw new ResourceNotFoundException("Exercise not found in this routine");
+        }
+
+        if (request.exerciseOrder() != null) {
+            routineExercise.setExerciseOrder(request.exerciseOrder());
+        }
+        if (request.exerciseNote() != null) {
+            routineExercise.setExerciseNote(request.exerciseNote());
+        }
+        if (request.supersetGroupId() != null) {
+            routineExercise.setSupersetGroupId(request.supersetGroupId());
+        }
+
+        if (request.sets() != null) {
+            routineExercise.getTargetSets().clear();
+
+            for (RoutineSetTargetRequest setRequest : request.sets()) {
+                validateSetTarget(setRequest, routineExercise.getExercise().getExerciseType());
+
+                RoutineSetTarget routineSetTarget = RoutineSetTarget.builder()
+                        .routineExercise(routineExercise)
+                        .setNumber(setRequest.setNumber())
+                        .targetWeight(setRequest.targetWeight())
+                        .targetRepsMin(setRequest.targetRepsMin())
+                        .targetRepsMax(setRequest.targetRepsMax())
+                        .targetDurationSeconds(setRequest.targetDurationSeconds())
+                        .setType(setRequest.setType())
+                        .build();
+
+                routineExercise.getTargetSets().add(routineSetTarget);
+            }
+        }
+
+        RoutineExercise savedRoutineExercise = routineExerciseRepository.save(routineExercise);
+
+        return DtoMapper.mapToRoutineExerciseResponse(savedRoutineExercise);
     }
 }

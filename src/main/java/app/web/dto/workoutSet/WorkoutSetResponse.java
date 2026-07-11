@@ -19,6 +19,7 @@ public record WorkoutSetResponse(
         Integer exerciseOrder,
         SetType setType,
         boolean completed,
-        LocalDateTime completedAt
+        LocalDateTime completedAt,
+        boolean isPersonalRecord
 ) {
 }

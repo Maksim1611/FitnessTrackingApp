@@ -1,5 +1,6 @@
 package app.workout.repository;
 
+import app.routine.model.Routine;
 import app.user.model.User;
 import app.workout.model.Workout;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,6 @@ import java.util.UUID;
 @Repository
 public interface WorkoutRepository extends JpaRepository<Workout, UUID> {
     List<Workout> findAllByUserOrderByStartedAtDesc(User user);
+
+    List<Workout> findAllByRoutine(Routine routine);
 }

@@ -33,6 +33,7 @@ public class JwtUtil {
 
     private String buildToken(AuthenticationMetadata user, long expirationMs) {
         return Jwts.builder()
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
                 .issuedAt(new Date())

@@ -56,6 +56,10 @@ public class UserService implements UserDetailsService {
             throw new DuplicateResourceException("Email already in use");
         }
 
+        if (userRepository.existsByUsername(request.username())) {
+            throw new DuplicateResourceException("Username already in use");
+        }
+
         User user = User.builder()
                 .name(request.name())
                 .email(request.email())

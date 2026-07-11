@@ -1,9 +1,13 @@
 package app.web;
 
+import app.exercise.model.Equipment;
+import app.exercise.model.ExerciseType;
+import app.exercise.model.MuscleGroup;
 import app.exercise.service.ExerciseService;
 import app.security.AuthenticationMetadata;
 import app.web.dto.exercise.ExerciseRequest;
 import app.web.dto.exercise.ExerciseResponse;
+import app.web.dto.exercise.UpdateExerciseRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +34,33 @@ public class ExerciseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<List<ExerciseResponse>> getAllExercisesById(@PathVariable UUID id)  {
-        return ResponseEntity.status(HttpStatus.OK).body(exerciseService.getExercisesByUserId(id));
+    @GetMapping
+    public ResponseEntity<List<ExerciseResponse>> getMyExercises(@AuthenticationPrincipal AuthenticationMetadata principal,
+                                                                 @RequestParam(required = false)MuscleGroup muscleGroup,
+                                                                 @RequestParam(required = false)Equipment equipment,
+                                                                 @RequestParam(required = false) ExerciseType exerciseType)  {
+        List<ExerciseResponse> exerciseResponses = exerciseService.searchExercises(principal.getId(), muscleGroup, equipment, exerciseType);
+        return ResponseEntity.status(HttpStatus.OK).body(exerciseResponses);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExerciseResponse> getExercise(@PathVariable UUID id,
+                                                        @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(exerciseService.getExerciseByIdAndUserId(id, principal.getId()));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ExerciseResponse> updateExercise(@PathVariable UUID id,
+                                                           @AuthenticationPrincipal AuthenticationMetadata principal,
+                                                           @RequestBody UpdateExerciseRequest request) {
+        ExerciseResponse exerciseResponse = exerciseService.updateExercise(id, principal.getId(), request);
+        return ResponseEntity.ok(exerciseResponse);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteExercise(@PathVariable UUID id, @AuthenticationPrincipal AuthenticationMetadata principal) {
+        exerciseService.deleteExercise(id, principal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
 }

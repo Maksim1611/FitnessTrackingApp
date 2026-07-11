@@ -5,6 +5,9 @@ import app.security.AuthenticationMetadata;
 import app.web.dto.routine.RoutineRequest;
 import app.web.dto.routine.RoutineResponse;
 import app.web.dto.routine.UpdateRoutineRequest;
+import app.web.dto.routineExercise.RoutineExerciseRequest;
+import app.web.dto.routineExercise.RoutineExerciseResponse;
+import app.web.dto.routineExercise.UpdateRoutineExerciseRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -49,5 +52,27 @@ public class RoutineController {
     public ResponseEntity<RoutineResponse> updateRoutine(@PathVariable UUID id, @RequestBody UpdateRoutineRequest request, @AuthenticationPrincipal AuthenticationMetadata principal) {
         RoutineResponse routineResponse = routineService.updateRoutine(id, request, principal.getId());
         return ResponseEntity.ok(routineResponse);
+    }
+
+    @PostMapping("/{routineId}/exercises")
+    public ResponseEntity<RoutineExerciseResponse> addExerciseToRoutine(@PathVariable UUID routineId,
+                                                                        @RequestBody RoutineExerciseRequest routineExerciseRequest,
+                                                                        @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(routineService.addExerciseToRoutine(routineId, routineExerciseRequest, principal.getId()));
+    }
+
+    @DeleteMapping("/{routineId}/exercises/{routineExerciseId}")
+    public ResponseEntity<Void> removeExerciseFromRoutine(@PathVariable UUID routineId, @PathVariable UUID routineExerciseId,
+                                                          @AuthenticationPrincipal AuthenticationMetadata principal) {
+        routineService.removeExerciseFromRoutine(routineId, routineExerciseId, principal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{routineId}/exercises/{routineExerciseId}")
+    public ResponseEntity<RoutineExerciseResponse> updateExerciseInRoutine(@PathVariable UUID routineId, @PathVariable UUID routineExerciseId,
+                                                                           @RequestBody UpdateRoutineExerciseRequest request,
+                                                                           @AuthenticationPrincipal AuthenticationMetadata principal) {
+        RoutineExerciseResponse routineExerciseResponse = routineService.updateExerciseInRoutine(routineId, routineExerciseId, request, principal.getId());
+        return ResponseEntity.ok(routineExerciseResponse);
     }
 }

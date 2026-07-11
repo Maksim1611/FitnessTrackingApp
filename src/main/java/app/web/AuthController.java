@@ -105,6 +105,9 @@ public class AuthController {
         }
         User user = storedToken.getUser();
 
+        storedToken.setRevoked(true);
+        refreshTokenRepository.save(storedToken);
+
         AuthenticationMetadata authMetadata = AuthenticationMetadata.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -114,8 +117,17 @@ public class AuthController {
                 .build();
 
         String newAccessToken = jwtUtil.generateAccessToken(authMetadata);
+        String newRefreshTokenStr = jwtUtil.generateRefreshToken(authMetadata);
 
-        return ResponseEntity.ok(new AccessTokenResponse(newAccessToken));
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(newRefreshTokenStr)
+                .expiredAt(LocalDateTime.now().plusDays(7))
+                .user(user)
+                .build();
+
+        refreshTokenRepository.save(refreshToken);
+
+        return ResponseEntity.ok(new AuthResponse(newAccessToken,  newRefreshTokenStr));
     }
 
     @PostMapping("/logout")

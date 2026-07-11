@@ -2,6 +2,7 @@ package app.workout.service;
 
 import app.exception.ResourceNotFoundException;
 import app.exercise.model.Exercise;
+import app.exercise.model.ExerciseType;
 import app.exercise.service.ExerciseService;
 import app.routine.model.Routine;
 import app.routine.model.RoutineExercise;
@@ -26,6 +27,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static app.exercise.model.ExerciseType.REPS_ONLY;
 
 @Service
 public class WorkoutService {
@@ -181,7 +184,37 @@ public class WorkoutService {
             workoutSet.setCompletedAt(request.completed() ? LocalDateTime.now() : null);
         }
 
+        evaluatePersonalRecord(workoutSet, userId);
+
         return DtoMapper.toWorkoutSetResponse(workoutSetRepository.save(workoutSet));
+    }
+
+    private void evaluatePersonalRecord(WorkoutSet workoutSet, UUID userId) {
+        if (!workoutSet.isCompleted()) {
+            workoutSet.setPersonalRecord(false);
+            return;
+        }
+
+        UUID exerciseId = workoutSet.getExercise().getId();
+        ExerciseType exerciseType = workoutSet.getExercise().getExerciseType();
+
+        boolean isPersonalRecord = switch (exerciseType) {
+            case WEIGHT_REPS, WEIGHTED_BODYWEIGHT -> {
+                Double maxWeight = workoutSetRepository.findMaxWeight(exerciseId, userId, workoutSet.getId());
+                yield workoutSet.getWeight() != null && (maxWeight == null || workoutSet.getWeight() > maxWeight);
+            }
+            case REPS_ONLY, BODYWEIGHT -> {
+                Integer maxReps = workoutSetRepository.findMaxReps(exerciseId, userId, workoutSet.getId());
+                yield workoutSet.getReps() != null && (maxReps == null || workoutSet.getReps() > maxReps);
+            }
+            case DURATION, WEIGHT_DURATION -> {
+                Integer maxDuration = workoutSetRepository.findMaxDuration(exerciseId, userId, workoutSet.getId());
+                yield workoutSet.getDurationSeconds() != null && (maxDuration == null || workoutSet.getDurationSeconds() > maxDuration);
+            }
+            default -> false;
+        };
+
+        workoutSet.setPersonalRecord(isPersonalRecord);
     }
 
     public void deleteSet(UUID workoutId, UUID setId, UUID userId) {
