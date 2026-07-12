@@ -59,10 +59,4 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Workout> workouts;
-
-    @Column
-    private int followers;
-
-    @Column
-    private int following;
 }

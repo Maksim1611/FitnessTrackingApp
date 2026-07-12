@@ -2,6 +2,7 @@ package app.user.service;
 
 import app.exception.DuplicateResourceException;
 import app.exception.ResourceNotFoundException;
+import app.follow.repository.FollowRepository;
 import app.security.AuthenticationMetadata;
 import app.user.model.User;
 import app.user.model.UserRole;
@@ -9,7 +10,9 @@ import app.user.repository.UserRepository;
 import app.utils.DtoMapper;
 import app.web.dto.auth.RegisterRequest;
 import app.web.dto.user.EditProfileRequest;
+import app.web.dto.user.PublicProfileResponse;
 import app.web.dto.user.UserResponse;
+import app.web.dto.user.UserSearchResponse;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,10 +32,12 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FollowRepository followRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.followRepository = followRepository;
     }
 
     @Override
@@ -67,8 +73,6 @@ public class UserService implements UserDetailsService {
                 .username(request.username())
                 .createdOn(LocalDateTime.now())
                 .updatedOn(LocalDateTime.now())
-                .followers(0)
-                .following(0)
                 .workouts(new ArrayList<>())
                 .imageUrl("")
                 .password(passwordEncoder.encode(request.password()))
@@ -106,5 +110,33 @@ public class UserService implements UserDetailsService {
         User savedUser = userRepository.save(user);
 
         return DtoMapper.toUserResponse(savedUser);
+    }
+
+    public List<UserSearchResponse> searchUsers(String username) {
+        return userRepository.findTop20ByUsernameContainingIgnoreCase(username)
+                .stream()
+                .map(user -> new UserSearchResponse(
+                        user.getId(),
+                        user.getName(),
+                        user.getUsername(),
+                        user.getImageUrl()
+                )).toList();
+    }
+
+    public PublicProfileResponse getPublicProfile(UUID targetUserId, UUID currentUserId) {
+        User targetUser = this.getUserById(targetUserId);
+        User currentUser = this.getUserById(currentUserId);
+
+        boolean isFollowing = !targetUserId.equals(currentUserId) && followRepository.existsByFollowerAndFollowed(currentUser, targetUser);
+
+        return new PublicProfileResponse(
+                targetUser.getId(),
+                targetUser.getName(),
+                targetUser.getUsername(),
+                targetUser.getImageUrl(),
+                followRepository.countByFollowed(targetUser),
+                followRepository.countByFollower(targetUser),
+                isFollowing
+                );
     }
 }
