@@ -3,6 +3,7 @@ package app.web;
 import app.security.AuthenticationMetadata;
 import app.stats.service.StatsService;
 import app.web.dto.stats.ExerciseProgressPointResponse;
+import app.web.dto.stats.ProgressionSuggestionResponse;
 import app.web.dto.stats.WeeklyVolumeResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,4 +35,9 @@ public class StatsController {
         return ResponseEntity.ok(statsService.getWeeklyVolume(weeks, principal.getId()));
     }
 
+    @GetMapping("/exercises/{id}/suggestion")
+    public ResponseEntity<ProgressionSuggestionResponse> getProgressionSuggestion(@PathVariable UUID id,
+                                                                                  @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(statsService.getProgressionSuggestion(id, principal.getId()));
+    }
 }

@@ -1,6 +1,7 @@
 package app.stats.service;
 
 import app.web.dto.stats.ExerciseProgressPointResponse;
+import app.web.dto.stats.ProgressionSuggestionResponse;
 import app.web.dto.stats.WeeklyVolumeResponse;
 import app.workoutset.model.WorkoutSet;
 import app.workoutset.repository.WorkoutSetRepository;
@@ -87,6 +88,74 @@ public class StatsService {
         }
 
         return result;
+    }
+
+    public ProgressionSuggestionResponse getProgressionSuggestion(UUID exerciseId, UUID userId) {
+        List<WorkoutSet> completedSets = workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId);
+
+        if (completedSets.isEmpty()) {
+            return new ProgressionSuggestionResponse(null, null, null,
+                    "Not enough history yet — complete a session with this exercise first");
+        }
+
+        UUID lastWorkoutId = completedSets.getLast().getWorkout().getId();
+        List<WorkoutSet> lastSession = new ArrayList<>();
+        for (WorkoutSet set : completedSets) {
+            if (set.getWorkout().getId().equals(lastWorkoutId)) {
+                lastSession.add(set);
+            }
+        }
+
+        WorkoutSet topSet = lastSession.getFirst();
+        for (WorkoutSet set : lastSession) {
+            if (weightOf(set) > weightOf(topSet)) {
+                topSet = set;
+            }
+        }
+
+        return switch (topSet.getExercise().getExerciseType()) {
+            case WEIGHT_REPS, WEIGHTED_BODYWEIGHT -> suggestForWeightReps(topSet);
+            case REPS_ONLY, BODYWEIGHT -> new ProgressionSuggestionResponse(null,
+                    topSet.getReps() != null ? topSet.getReps() + 1 : null, null,
+                    "Last session: " + topSet.getReps() + " reps — try one more");
+            case DURATION, WEIGHT_DURATION -> new ProgressionSuggestionResponse(topSet.getWeight(),
+                    null, topSet.getDurationSeconds() != null ? topSet.getDurationSeconds() + 10 : null,
+                    "Last session: " + topSet.getDurationSeconds() + "s — try 10 more seconds");
+            default -> new ProgressionSuggestionResponse(null, null, null,
+                    "Suggestions aren't supported for this exercise type yet");
+        };
+    }
+
+    private ProgressionSuggestionResponse suggestForWeightReps(WorkoutSet topSet) {
+        double weight = weightOf(topSet);
+        int reps = topSet.getReps() != null ? topSet.getReps() : 0;
+        Double rpe = topSet.getRpe();
+
+        String lastSession = String.format("Last session: %.1fkg x %d%s", weight, reps,
+                rpe != null ? " @ RPE " + rpe : "");
+
+        if (rpe != null && rpe > 9) {
+            if (reps < 5) {
+                double deloaded = Math.round((weight * 0.95) / 2.5) * 2.5;
+                return new ProgressionSuggestionResponse(deloaded, reps, null,
+                        lastSession + " — that was a grind, back off a little and rebuild");
+            }
+            return new ProgressionSuggestionResponse(weight, reps, null,
+                    lastSession + " — right at your limit, consolidate before adding");
+        }
+
+        if (rpe != null && rpe >= 8) {
+            return new ProgressionSuggestionResponse(weight, reps + 1, null,
+                    lastSession + " — solid effort, add a rep at this weight");
+        }
+
+        if (reps >= 8) {
+            return new ProgressionSuggestionResponse(weight + 2.5, reps, null,
+                    lastSession + " — you're ready to move up");
+        }
+
+        return new ProgressionSuggestionResponse(weight, reps + 1, null,
+                lastSession + " — build to 8 reps before adding weight");
     }
 
 }
