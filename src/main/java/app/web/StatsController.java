@@ -3,6 +3,7 @@ package app.web;
 import app.security.AuthenticationMetadata;
 import app.stats.service.StatsService;
 import app.web.dto.stats.ExerciseProgressPointResponse;
+import app.web.dto.stats.MuscleGroupVolumeResponse;
 import app.web.dto.stats.ProgressionSuggestionResponse;
 import app.web.dto.stats.WeeklyVolumeResponse;
 import org.springframework.http.ResponseEntity;
@@ -39,5 +40,11 @@ public class StatsController {
     public ResponseEntity<ProgressionSuggestionResponse> getProgressionSuggestion(@PathVariable UUID id,
                                                                                   @AuthenticationPrincipal AuthenticationMetadata principal) {
         return ResponseEntity.ok(statsService.getProgressionSuggestion(id, principal.getId()));
+    }
+
+    @GetMapping("/muscle-volume")
+    public ResponseEntity<List<MuscleGroupVolumeResponse>> getMuscleGroupVolume(@RequestParam(defaultValue = "4") int weeks,
+                                                                                @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(statsService.getMuscleGroupVolume(weeks, principal.getId()));
     }
 }

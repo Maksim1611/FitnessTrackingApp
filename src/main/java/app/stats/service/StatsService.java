@@ -1,6 +1,8 @@
 package app.stats.service;
 
+import app.exercise.model.MuscleGroup;
 import app.web.dto.stats.ExerciseProgressPointResponse;
+import app.web.dto.stats.MuscleGroupVolumeResponse;
 import app.web.dto.stats.ProgressionSuggestionResponse;
 import app.web.dto.stats.WeeklyVolumeResponse;
 import app.workoutset.model.WorkoutSet;
@@ -158,4 +160,33 @@ public class StatsService {
                 lastSession + " — build to 8 reps before adding weight");
     }
 
+
+    public List<MuscleGroupVolumeResponse> getMuscleGroupVolume(int weeks, UUID userId) {
+        LocalDate firstWeekStart = LocalDate.now().with(DayOfWeek.MONDAY).minusWeeks(weeks - 1);
+
+        LocalDateTime since = firstWeekStart.atStartOfDay();
+
+        List<WorkoutSet> completedSets = workoutSetRepository.findCompletedSetsSince(userId, since);
+
+        Map<MuscleGroup, List<WorkoutSet>> setsByMuscleGroup = new TreeMap<>();
+
+        for (WorkoutSet set : completedSets) {
+            MuscleGroup muscleGroup = set.getExercise().getPrimaryMuscleGroup();
+            setsByMuscleGroup.computeIfAbsent(muscleGroup, k -> new ArrayList<>()).add(set);
+        }
+
+        List<MuscleGroupVolumeResponse> result = new ArrayList<>();
+        for (Map.Entry<MuscleGroup, List<WorkoutSet>> entry : setsByMuscleGroup.entrySet()) {
+            double totalVolume = 0.0;
+            for (WorkoutSet set : entry.getValue()) {
+                if (set.getWeight() != null && set.getReps() != null) {
+                    totalVolume += set.getWeight() * set.getReps();
+                }
+            }
+
+            result.add(new MuscleGroupVolumeResponse(entry.getKey(), totalVolume, entry.getValue().size()));
+        }
+
+        return result;
+    }
 }
