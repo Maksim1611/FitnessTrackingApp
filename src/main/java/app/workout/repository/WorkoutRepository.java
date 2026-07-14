@@ -20,4 +20,6 @@ public interface WorkoutRepository extends JpaRepository<Workout, UUID> {
 
     @Query("SELECT w FROM Workout w WHERE w.finishedAt IS NOT NULL AND w.user IN (SELECT f.followed FROM Follow f WHERE f.follower.id = :userId) ORDER BY w.finishedAt DESC")
     List<Workout> findFeedForUser(@Param("userId") UUID userId, Pageable pageable);
+
+    long countByUserAndFinishedAtIsNotNull(User user);
 }

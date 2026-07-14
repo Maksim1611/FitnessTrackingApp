@@ -1,5 +1,6 @@
 package app.workout.service;
 
+import app.badge.service.BadgeService;
 import app.exception.ResourceNotFoundException;
 import app.exercise.model.Exercise;
 import app.exercise.model.ExerciseType;
@@ -36,14 +37,16 @@ public class WorkoutService {
     private final UserService userService;
     private final ExerciseService exerciseService;
     private final RoutineRepository routineRepository;
+    private final BadgeService badgeService;
 
     public WorkoutService(WorkoutRepository workoutRepository, WorkoutSetRepository workoutSetRepository,
-                           UserService userService, ExerciseService exerciseService, RoutineRepository routineRepository) {
+                          UserService userService, ExerciseService exerciseService, RoutineRepository routineRepository, BadgeService badgeService) {
         this.workoutRepository = workoutRepository;
         this.workoutSetRepository = workoutSetRepository;
         this.userService = userService;
         this.exerciseService = exerciseService;
         this.routineRepository = routineRepository;
+        this.badgeService = badgeService;
     }
 
     public WorkoutResponse startWorkout(WorkoutRequest request, UUID userId) {
@@ -121,7 +124,11 @@ public class WorkoutService {
         }
 
         workout.setFinishedAt(LocalDateTime.now());
-        return DtoMapper.toWorkoutResponse(workoutRepository.save(workout));
+        WorkoutResponse workoutResponse = DtoMapper.toWorkoutResponse(workoutRepository.save(workout));
+
+        badgeService.evaluateAndAward(userId);
+
+        return workoutResponse;
     }
 
     public WorkoutSetResponse addSet(UUID workoutId, AddWorkoutSetRequest request, UUID userId) {
@@ -242,4 +249,7 @@ public class WorkoutService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Set not found in this workout"));
     }
+
+
+
 }

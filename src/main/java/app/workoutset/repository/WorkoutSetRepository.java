@@ -31,4 +31,7 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
     @Query("SELECT ws FROM WorkoutSet ws WHERE ws.workout.user.id = :userId AND ws.completed = true AND ws.workout.startedAt >= :since")
     List<WorkoutSet> findCompletedSetsSince(@Param("userId") UUID userId, @Param("since") LocalDateTime since);
 
+    @Query("SELECT ws FROM WorkoutSet ws WHERE ws.workout.user.id = :userId AND ws.completed = true")
+    List<WorkoutSet> findAllCompletedByUser(@Param("userId") UUID userId);
+
 }
