@@ -58,12 +58,18 @@ public class BadgeService {
 
         long prCount = 0;
         double totalVolume = 0.0;
+        long cardioSeconds = 0;
+
         Map<MuscleGroup, Double> volumeByMuscle = new HashMap<>();
 
         for (WorkoutSet set : allCompletedSets) {
             if (set.isPersonalRecord()) {
                 prCount++;
             }
+            if (set.getDurationSeconds() != null) {
+                cardioSeconds = cardioSeconds + set.getDurationSeconds();
+            }
+
             if (set.getWeight() != null && set.getReps() != null) {
                 double setVolume = set.getWeight() * set.getReps();
                 totalVolume = totalVolume + setVolume;
@@ -82,6 +88,7 @@ public class BadgeService {
         awardForMetric(user, BadgeCategory.WORKOUT_COUNT, null, finishedWorkouts);
         awardForMetric(user, BadgeCategory.PR_COUNT, null, prCount);
         awardForMetric(user, BadgeCategory.TOTAL_VOLUME, null, (long) totalVolume);
+        awardForMetric(user, BadgeCategory.CARDIO_TIME, null, cardioSeconds);
 
         for (Map.Entry<MuscleGroup, Double> entry : volumeByMuscle.entrySet()) {
             awardForMetric(user, BadgeCategory.MUSCLE_VOLUME, entry.getKey(), (long) (double) entry.getValue());
@@ -134,6 +141,13 @@ public class BadgeService {
             if (tier == BadgeTier.GOLD) return 2_000_000;
             if (tier == BadgeTier.DIAMOND) return 10_000_000;
             return 50_000_000;
+        }
+        if (category == BadgeCategory.CARDIO_TIME) {
+            if (tier == BadgeTier.BRONZE) return 3_600;
+            if (tier == BadgeTier.SILVER) return 36_000;
+            if (tier == BadgeTier.GOLD) return 180_000;
+            if (tier == BadgeTier.DIAMOND) return 540_000;
+            return 1_800_000;
         }
         if (tier == BadgeTier.BRONZE) return 10_000;
         if (tier == BadgeTier.SILVER) return 50_000;
