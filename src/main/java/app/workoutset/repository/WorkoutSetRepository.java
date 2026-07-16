@@ -34,4 +34,7 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, UUID> {
     @Query("SELECT ws FROM WorkoutSet ws WHERE ws.workout.user.id = :userId AND ws.completed = true")
     List<WorkoutSet> findAllCompletedByUser(@Param("userId") UUID userId);
 
+    @Query("SELECT MIN(ws.weight) FROM WorkoutSet ws WHERE ws.exercise.id = :exerciseId AND ws.workout.user.id = :userId AND ws.completed = true AND ws.id <> :excludeId")
+    Double findMinWeight(@Param("exerciseId") UUID exerciseId, @Param("userId") UUID userId, @Param("excludeId") UUID excludeId);
+
 }

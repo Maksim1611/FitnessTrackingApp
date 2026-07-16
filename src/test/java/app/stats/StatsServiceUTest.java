@@ -250,7 +250,7 @@ public class StatsServiceUTest {
 
         Workout workout = buildWorkout();
 
-        WorkoutSet workoutSet = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, null, 15, 7.6);
+        WorkoutSet workoutSet = buildSet(workout, ExerciseType.DISTANCE, null, 15, 7.6);
 
         when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(workoutSet));
 
@@ -259,5 +259,85 @@ public class StatsServiceUTest {
         assertNull(response.suggestedWeight());
         assertNull(response.suggestedReps());
         assertNull(response.suggestedDurationSeconds());
-        assertTrue(response.reason().contains("aren't supported"));    }
+        assertTrue(response.reason().contains("aren't supported"));
+    }
+
+    @Test
+    void whenGetProgressionSuggestion_andAssistedSetHitsHighReps_thenReducesAssistanceBy2AndHalfKg() {
+        UUID userId = UUID.randomUUID();
+        UUID exerciseId = UUID.randomUUID();
+
+        Workout workout = buildWorkout();
+        WorkoutSet set = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 20.0, 10, null);
+
+        when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(set));
+
+        ProgressionSuggestionResponse response = statsService.getProgressionSuggestion(exerciseId, userId);
+
+        assertEquals(17.5, response.suggestedWeight());
+        assertEquals(10, response.suggestedReps());
+    }
+
+    @Test
+    void whenGetProgressionSuggestion_andAssistedSetBelowEightReps_thenAddsRepAtSameAssistance() {
+        UUID userId = UUID.randomUUID();
+        UUID exerciseId = UUID.randomUUID();
+
+        Workout workout = buildWorkout();
+        WorkoutSet workoutSet = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 20.0, 6, null);
+
+        when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(workoutSet));
+
+        ProgressionSuggestionResponse response = statsService.getProgressionSuggestion(exerciseId, userId);
+
+        assertEquals(20.0, response.suggestedWeight());
+        assertEquals(7, response.suggestedReps());
+    }
+
+    @Test
+    void whenGetProgressionSuggestion_andAssistedSetIsAGrind_thenAddsAssistanceBack() {
+        UUID userId = UUID.randomUUID();
+        UUID exerciseId = UUID.randomUUID();
+
+        Workout workout = buildWorkout();
+        WorkoutSet workoutSet = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 15.0, 3, 9.5);
+
+        when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(workoutSet));
+
+        ProgressionSuggestionResponse response = statsService.getProgressionSuggestion(exerciseId, userId);
+
+        assertEquals(17.5, response.suggestedWeight());
+    }
+
+    @Test
+    void whenGetProgressionSuggestion_andAssistanceNearlyGoneWithHighReps_thenSuggestsUnassisted() {
+        UUID userId = UUID.randomUUID();
+        UUID exerciseId = UUID.randomUUID();
+
+        Workout workout = buildWorkout();
+        WorkoutSet workoutSet = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 2.5, 10, null);
+
+        when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(workoutSet));
+
+        ProgressionSuggestionResponse response = statsService.getProgressionSuggestion(exerciseId, userId);
+
+        assertEquals(0.0, response.suggestedWeight());
+        assertNull(response.suggestedReps());    }
+
+    @Test
+    void whenGetProgressionSuggestion_andAssistedSessionHasTwoSets_thenDerivesFromLowestAssistanceSet() {
+        UUID userId = UUID.randomUUID();
+        UUID exerciseId = UUID.randomUUID();
+
+        Workout workout = buildWorkout();
+        WorkoutSet set20kg = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 20.0, null, null);
+        WorkoutSet set10kg = buildSet(workout, ExerciseType.ASSISTED_BODYWEIGHT, 10.0, 6, null);
+
+        when(workoutSetRepository.findCompletedSetsForExercise(exerciseId, userId)).thenReturn(List.of(set10kg, set20kg));
+
+        ProgressionSuggestionResponse response = statsService.getProgressionSuggestion(exerciseId, userId);
+
+        assertEquals(10.0, response.suggestedWeight());
+        assertEquals(7, response.suggestedReps());
+    }
 }

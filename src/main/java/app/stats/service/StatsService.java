@@ -1,5 +1,6 @@
 package app.stats.service;
 
+import app.exercise.model.ExerciseType;
 import app.exercise.model.MuscleGroup;
 import app.web.dto.stats.ExerciseProgressPointResponse;
 import app.web.dto.stats.MuscleGroupVolumeResponse;
@@ -108,15 +109,24 @@ public class StatsService {
             }
         }
 
+        ExerciseType type = lastSession.getFirst().getExercise().getExerciseType();
+
         WorkoutSet topSet = lastSession.getFirst();
         for (WorkoutSet set : lastSession) {
-            if (weightOf(set) > weightOf(topSet)) {
-                topSet = set;
+            if (type == ExerciseType.ASSISTED_BODYWEIGHT) {
+                if (weightOf(set) < weightOf(topSet)) {
+                    topSet = set;
+                }
+            } else {
+                if (weightOf(set) > weightOf(topSet)) {
+                    topSet = set;
+                }
             }
         }
 
-        return switch (topSet.getExercise().getExerciseType()) {
+        return switch (type) {
             case WEIGHT_REPS, WEIGHTED_BODYWEIGHT -> suggestForWeightReps(topSet);
+            case ASSISTED_BODYWEIGHT -> suggestForAssistedBodyweight(topSet);
             case REPS_ONLY, BODYWEIGHT -> new ProgressionSuggestionResponse(null,
                     topSet.getReps() != null ? topSet.getReps() + 1 : null, null,
                     "Last session: " + topSet.getReps() + " reps — try one more");
@@ -188,5 +198,43 @@ public class StatsService {
         }
 
         return result;
+    }
+
+    private ProgressionSuggestionResponse suggestForAssistedBodyweight(WorkoutSet topSet) {
+        double assistance = weightOf(topSet);
+
+        int reps = 0;
+        if (topSet.getReps() != null) {
+            reps = topSet.getReps();
+        }
+
+        Double rpe = topSet.getRpe();
+
+        String lastSession = String.format("Last session %d reps with %.2f kg assistance", reps, assistance);
+
+        if (rpe != null && rpe > 9) {
+            if (reps < 5) {
+                return new ProgressionSuggestionResponse(assistance + 2.5, reps, null,
+                        lastSession + " — that was a grind, add a little help back and rebuild");
+            }
+            return new ProgressionSuggestionResponse(assistance, reps, null,
+                    lastSession + " — right at your limit, consolidate before reducing assistance");
+        }
+
+        if (rpe != null && rpe >= 8) {
+            return new ProgressionSuggestionResponse(assistance, reps + 1, null,
+                    lastSession + " — solid effort, add a rep at this assistance");
+        }
+        if (reps >= 8) {
+            if (assistance <= 2.5) {
+                return new ProgressionSuggestionResponse(0.0, null, null,
+                        lastSession + " — you're ready: try it unassisted and see what you get");
+            }
+            return new ProgressionSuggestionResponse(assistance - 2.5, reps, null,
+                    lastSession + " — reduce the assistance, you've earned it");
+        }
+
+        return new ProgressionSuggestionResponse(assistance, reps + 1, null,
+                lastSession + " — build up to 8 reps before reducing assistance");
     }
 }

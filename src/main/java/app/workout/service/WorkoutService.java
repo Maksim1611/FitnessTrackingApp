@@ -216,6 +216,10 @@ public class WorkoutService {
                 Integer maxDuration = workoutSetRepository.findMaxDuration(exerciseId, userId, workoutSet.getId());
                 yield workoutSet.getDurationSeconds() != null && (maxDuration == null || workoutSet.getDurationSeconds() > maxDuration);
             }
+            case ASSISTED_BODYWEIGHT -> {
+                Double minWeight = workoutSetRepository.findMinWeight(exerciseId, userId, workoutSet.getId());
+                yield workoutSet.getWeight() != null && (minWeight == null || workoutSet.getWeight() < minWeight);
+            }
             default -> false;
         };
 
