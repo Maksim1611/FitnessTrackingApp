@@ -1,5 +1,6 @@
 package app.web.dto.workoutSet;
 
+import app.exercise.model.ExerciseType;
 import app.workoutset.model.SetType;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ public record WorkoutSetResponse(
         UUID id,
         UUID exerciseId,
         String exerciseName,
+        ExerciseType exerciseType,
         Integer setNumber,
         Double weight,
         Integer reps,

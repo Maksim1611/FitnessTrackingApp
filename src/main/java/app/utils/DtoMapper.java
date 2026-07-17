@@ -57,7 +57,8 @@ public class DtoMapper {
                 exercise.getEquipment(),
                 exercise.getPrimaryMuscleGroup(),
                 exercise.getOtherMuscleGroups(),
-                exercise.getImageUrl()
+                exercise.getImageUrl(),
+                exercise.getCreatedBy() != null
         );
     }
 
@@ -81,6 +82,7 @@ public class DtoMapper {
                 set.getId(),
                 set.getExercise().getId(),
                 set.getExercise().getName(),
+                set.getExercise().getExerciseType(), 
                 set.getSetNumber(),
                 set.getWeight(),
                 set.getReps(),
