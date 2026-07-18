@@ -38,6 +38,11 @@ public class FollowController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/suggested")
+    public ResponseEntity<List<UserSearchResponse>> getSuggestedUsers(@AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(userService.getSuggestedUsers(principal.getId(), 6));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<UserSearchResponse>> searchUsers(@RequestParam String username) {
         List<UserSearchResponse> userSearchResponses = userService.searchUsers(username);

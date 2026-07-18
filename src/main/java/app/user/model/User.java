@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +46,14 @@ public class User {
     private UserRole role;
 
     private String imageUrl;
+
+    private LocalDate birthDate;
+
+    @Enumerated(EnumType.STRING)
+    private Sex sex;
+
+    @Column(length = 500)
+    private String bio;
 
     @Column(updatable = false)
     private LocalDateTime createdOn;

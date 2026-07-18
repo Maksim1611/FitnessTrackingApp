@@ -1,5 +1,7 @@
 package app.feed.service;
 
+import app.social.repository.WorkoutCommentRepository;
+import app.social.repository.WorkoutLikeRepository;
 import app.web.dto.feed.FeedItemResponse;
 import app.workout.model.Workout;
 import app.workout.repository.WorkoutRepository;
@@ -17,9 +19,14 @@ public class FeedService {
     private static final int MAX_PAGE_SIZE = 50;
 
     private final WorkoutRepository workoutRepository;
+    private final WorkoutLikeRepository likeRepository;
+    private final WorkoutCommentRepository commentRepository;
 
-    public FeedService(WorkoutRepository workoutRepository) {
+    public FeedService(WorkoutRepository workoutRepository, WorkoutLikeRepository likeRepository,
+                       WorkoutCommentRepository commentRepository) {
         this.workoutRepository = workoutRepository;
+        this.likeRepository = likeRepository;
+        this.commentRepository = commentRepository;
     }
 
     public List<FeedItemResponse> getFeed(UUID userId, int page, int size) {
@@ -50,13 +57,17 @@ public class FeedService {
                     workout.getId(),
                     workout.getUser().getId(),
                     workout.getUser().getUsername(),
+                    workout.getUser().getName(),
                     workout.getUser().getImageUrl(),
                     workout.getName(),
                     workout.getStartedAt(),
                     workout.getFinishedAt(),
                     totalSets,
                     totalVolume,
-                    prCount
+                    prCount,
+                    likeRepository.countByWorkoutId(workout.getId()),
+                    commentRepository.countByWorkoutId(workout.getId()),
+                    likeRepository.existsByUserIdAndWorkoutId(userId, workout.getId())
             ));
         }
 

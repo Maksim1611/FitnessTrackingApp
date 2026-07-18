@@ -126,6 +126,54 @@ public class UserService implements UserDetailsService {
                 )).toList();
     }
 
+    private static final java.util.Set<String> ALLOWED_AVATAR_TYPES =
+            java.util.Set.of("image/jpeg", "image/png", "image/webp");
+
+    public UserResponse updateAvatar(UUID userId, org.springframework.web.multipart.MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("No image provided");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_AVATAR_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("Only JPEG, PNG or WebP images are allowed");
+        }
+
+        String extension = switch (contentType) {
+            case "image/png" -> "png";
+            case "image/webp" -> "webp";
+            default -> "jpg";
+        };
+
+        try {
+            java.nio.file.Path dir = java.nio.file.Paths.get("uploads", "avatars");
+            java.nio.file.Files.createDirectories(dir);
+            java.nio.file.Path target = dir.resolve(userId + "." + extension);
+            file.transferTo(target.toAbsolutePath());
+
+            User user = getUserById(userId);
+            // Cache-busting query param so clients refresh after re-upload.
+            user.setImageUrl("/uploads/avatars/" + userId + "." + extension + "?v=" + System.currentTimeMillis());
+            user.setUpdatedOn(LocalDateTime.now());
+            return DtoMapper.toUserResponse(userRepository.save(user));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Could not store avatar: " + e.getMessage(), e);
+        }
+    }
+
+    public List<UserSearchResponse> getSuggestedUsers(UUID currentUserId, int limit) {
+        User current = getUserById(currentUserId);
+        var followedIds = followRepository.findAllByFollower(current).stream()
+                .map(f -> f.getFollowed().getId())
+                .collect(java.util.stream.Collectors.toSet());
+
+        return userRepository.findAll().stream()
+                .filter(u -> !u.getId().equals(currentUserId) && !followedIds.contains(u.getId()))
+                .sorted((a, b) -> Long.compare(followRepository.countByFollowed(b), followRepository.countByFollowed(a)))
+                .limit(limit)
+                .map(u -> new UserSearchResponse(u.getId(), u.getName(), u.getUsername(), u.getImageUrl()))
+                .toList();
+    }
+
     public PublicProfileResponse getPublicProfile(UUID targetUserId, UUID currentUserId) {
         User targetUser = this.getUserById(targetUserId);
         User currentUser = this.getUserById(currentUserId);
@@ -137,6 +185,7 @@ public class UserService implements UserDetailsService {
                 targetUser.getName(),
                 targetUser.getUsername(),
                 targetUser.getImageUrl(),
+                targetUser.getBio(),
                 followRepository.countByFollowed(targetUser),
                 followRepository.countByFollower(targetUser),
                 workoutRepository.countByUserAndFinishedAtIsNotNull(targetUser),

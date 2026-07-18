@@ -30,4 +30,10 @@ public class UserController {
         return ResponseEntity.ok(DtoMapper.toUserResponse(userService.getUserById(principal.getId())));
     }
 
+    @PostMapping(value = "/profile/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> uploadAvatar(@RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+                                                     @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(userService.updateAvatar(principal.getId(), file));
+    }
+
 }

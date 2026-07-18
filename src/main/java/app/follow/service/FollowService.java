@@ -4,6 +4,8 @@ import app.exception.DuplicateResourceException;
 import app.exception.ResourceNotFoundException;
 import app.follow.model.Follow;
 import app.follow.repository.FollowRepository;
+import app.social.model.NotificationType;
+import app.social.service.NotificationService;
 import app.user.model.User;
 import app.user.service.UserService;
 import org.springframework.stereotype.Service;
@@ -16,10 +18,12 @@ public class FollowService {
 
     private final FollowRepository followRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
-    public FollowService(FollowRepository followRepository, UserService userService) {
+    public FollowService(FollowRepository followRepository, UserService userService, NotificationService notificationService) {
         this.followRepository = followRepository;
         this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     public void followUser(UUID targetUserId, UUID currentUserId) {
@@ -41,6 +45,8 @@ public class FollowService {
                 .build();
 
         followRepository.save(follow);
+
+        notificationService.notify(followed, follower, NotificationType.FOLLOW, null);
     }
 
     public void unfollowUser(UUID targetUserId, UUID currentUserId) {

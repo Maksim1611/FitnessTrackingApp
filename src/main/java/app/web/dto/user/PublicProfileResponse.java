@@ -7,6 +7,7 @@ public record PublicProfileResponse(
         String name,
         String username,
         String imageUrl,
+        String bio,
         long followerCount,
         long followingCount,
         long workoutCount,

@@ -36,6 +36,15 @@ public class DtoMapper {
         if (request.imageUrl() != null && !request.imageUrl().isEmpty()) {
             user.setImageUrl(request.imageUrl());
         }
+        if (request.birthDate() != null) {
+            user.setBirthDate(request.birthDate());
+        }
+        if (request.sex() != null) {
+            user.setSex(request.sex());
+        }
+        if (request.bio() != null) {
+            user.setBio(request.bio());
+        }
     }
 
     public static UserResponse toUserResponse(User user) {
@@ -45,6 +54,9 @@ public class DtoMapper {
                 user.getUsername(),
                 user.getEmail(),
                 user.getImageUrl(),
+                user.getBirthDate(),
+                user.getSex(),
+                user.getBio(),
                 user.getCreatedOn()
         );
     }
