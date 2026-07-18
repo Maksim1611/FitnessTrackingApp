@@ -21,6 +21,7 @@ import app.workout.model.Workout;
 import app.workout.repository.WorkoutRepository;
 import app.workoutset.model.WorkoutSet;
 import app.workoutset.repository.WorkoutSetRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +50,7 @@ public class WorkoutService {
         this.badgeService = badgeService;
     }
 
+    @Transactional
     public WorkoutResponse startWorkout(WorkoutRequest request, UUID userId) {
         User user = userService.getUserById(userId);
         Routine routine = null;
@@ -116,6 +118,7 @@ public class WorkoutService {
         workoutRepository.delete(workout);
     }
 
+    @Transactional
     public WorkoutResponse finishWorkout(UUID workoutId, UUID userId) {
         Workout workout = getOwnedWorkout(workoutId, userId);
 

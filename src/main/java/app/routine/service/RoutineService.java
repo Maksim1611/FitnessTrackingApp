@@ -22,6 +22,7 @@ import app.web.dto.routine.RoutineResponse;
 import app.web.dto.routine.UpdateRoutineRequest;
 import app.web.dto.routineExercise.RoutineExerciseRequest;
 import app.web.dto.routineSetTarget.RoutineSetTargetRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -48,8 +49,18 @@ public class RoutineService {
         this.workoutRepository = workoutRepository;
     }
 
+    @Transactional
     public RoutineResponse createRoutine(RoutineRequest request, UUID userId) {
         User user = userService.getUserById(userId);
+
+        // Validate the whole request before persisting anything, so a bad set
+        // can't leave a half-created routine behind.
+        for (RoutineExerciseRequest exerciseRequest : request.exercises()) {
+            Exercise requestedExercise = exerciseService.getExerciseById(exerciseRequest.exerciseId());
+            for (RoutineSetTargetRequest setRequest : exerciseRequest.sets()) {
+                validateSetTarget(setRequest, requestedExercise.getExerciseType());
+            }
+        }
 
         Routine routine = Routine.builder()
                 .name(request.name())
@@ -142,6 +153,7 @@ public class RoutineService {
         return DtoMapper.mapToRoutineResponse(routine);
     }
 
+    @Transactional
     public void deleteRoutine(UUID id, UUID userId) {
         Routine routine = routineRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Routine not found"));
         if (!routine.getUser().getId().equals(userId)) {
@@ -176,6 +188,7 @@ public class RoutineService {
         return DtoMapper.mapToRoutineResponse(routineRepository.save(routine));
     }
 
+    @Transactional
     public RoutineExerciseResponse addExerciseToRoutine(UUID routineId, RoutineExerciseRequest request, UUID userId) {
         Routine routine = routineRepository.findById(routineId).orElseThrow(() -> new ResourceNotFoundException("Routine not found"));
 
@@ -184,6 +197,11 @@ public class RoutineService {
         }
 
         Exercise exercise = exerciseService.getExerciseById(request.exerciseId());
+
+        // Validate before persisting so a bad set can't leave an orphaned routine exercise.
+        for (RoutineSetTargetRequest setRequest : request.sets()) {
+            validateSetTarget(setRequest, exercise.getExerciseType());
+        }
 
         RoutineExercise routineExercise = RoutineExercise.builder()
                 .routine(routine)
@@ -243,6 +261,7 @@ public class RoutineService {
         return routineExerciseRepository.findById(routineExerciseId).orElseThrow(() -> new ResourceNotFoundException("Exercise not found in this routine"));
     }
 
+    @Transactional
     public RoutineExerciseResponse updateExerciseInRoutine(UUID routineId, UUID routineExerciseId,
                                                            UpdateRoutineExerciseRequest request, UUID userId) {
         Routine routine = this.getRoutineById(routineId);

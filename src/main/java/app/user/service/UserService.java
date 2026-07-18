@@ -13,6 +13,7 @@ import app.web.dto.user.EditProfileRequest;
 import app.web.dto.user.PublicProfileResponse;
 import app.web.dto.user.UserResponse;
 import app.web.dto.user.UserSearchResponse;
+import app.workout.repository.WorkoutRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,11 +34,13 @@ public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
+    private final WorkoutRepository workoutRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository, WorkoutRepository workoutRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.followRepository = followRepository;
+        this.workoutRepository = workoutRepository;
     }
 
     @Override
@@ -136,6 +139,7 @@ public class UserService implements UserDetailsService {
                 targetUser.getImageUrl(),
                 followRepository.countByFollowed(targetUser),
                 followRepository.countByFollower(targetUser),
+                workoutRepository.countByUserAndFinishedAtIsNotNull(targetUser),
                 isFollowing
                 );
     }

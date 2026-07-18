@@ -23,10 +23,11 @@ public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
 
     boolean existsByNameAndCreatedBy(String name, User createdBy);
 
-    @Query("SELECT e FROM Exercise e WHERE e.createdBy.id = :userId " +
+    @Query("SELECT e FROM Exercise e WHERE (e.createdBy IS NULL OR e.createdBy.id = :userId) " +
             "AND (:muscleGroup IS NULL OR e.primaryMuscleGroup = :muscleGroup) " +
             "AND (:equipment IS NULL OR e.equipment = :equipment) " +
-            "AND (:exerciseType IS NULL OR e.exerciseType = :exerciseType)")
+            "AND (:exerciseType IS NULL OR e.exerciseType = :exerciseType) " +
+            "ORDER BY e.name")
     List<Exercise> searchExercises(@Param("userId") UUID userId,
                                    @Param("muscleGroup") MuscleGroup muscleGroup,
                                    @Param("equipment") Equipment equipment,

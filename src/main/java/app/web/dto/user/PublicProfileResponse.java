@@ -9,6 +9,7 @@ public record PublicProfileResponse(
         String imageUrl,
         long followerCount,
         long followingCount,
+        long workoutCount,
         boolean isFollowing
 ) {
 }

@@ -29,6 +29,8 @@ public record ExerciseResponse(
 
         Set<MuscleGroup> otherMuscles,
 
-        String imageUrl
+        String imageUrl,
+
+        boolean custom
 ) {
 }

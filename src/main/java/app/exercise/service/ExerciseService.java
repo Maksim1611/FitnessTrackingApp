@@ -73,7 +73,7 @@ public class ExerciseService {
         Exercise exercise = exerciseRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Exercise not found"));
 
-        if (!userId.equals(exercise.getCreatedBy().getId())) {
+        if (exercise.getCreatedBy() != null && !userId.equals(exercise.getCreatedBy().getId())) {
             throw new AccessDeniedException("You don't have access to this exercise");
         }
 
@@ -83,6 +83,9 @@ public class ExerciseService {
     public ExerciseResponse updateExercise(UUID exerciseId, UUID userId, UpdateExerciseRequest request) {
         Exercise exercise = getExerciseById(exerciseId);
 
+        if (exercise.getCreatedBy() == null) {
+            throw new AccessDeniedException("Built-in exercises can't be edited");
+        }
         if (!exercise.getCreatedBy().getId().equals(userId)) {
             throw new AccessDeniedException("You don't have access to this exercise");
         }
@@ -117,6 +120,9 @@ public class ExerciseService {
     public void deleteExercise(UUID exerciseId, UUID userId) {
         Exercise exercise = getExerciseById(exerciseId);
 
+        if (exercise.getCreatedBy() == null) {
+            throw new AccessDeniedException("Built-in exercises can't be deleted");
+        }
         if (!exercise.getCreatedBy().getId().equals(userId)) {
             throw new AccessDeniedException("You don't have access to this exercise");
         }
