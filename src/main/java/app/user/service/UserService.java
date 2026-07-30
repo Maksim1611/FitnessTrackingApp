@@ -3,6 +3,7 @@ package app.user.service;
 import app.exception.DuplicateResourceException;
 import app.exception.ResourceNotFoundException;
 import app.follow.repository.FollowRepository;
+import app.follow.repository.FollowRequestRepository;
 import app.security.AuthenticationMetadata;
 import app.user.model.User;
 import app.user.model.UserRole;
@@ -31,16 +32,25 @@ import java.util.UUID;
 @Service
 public class UserService implements UserDetailsService {
 
+    private static final java.util.List<String> INTERNAL_MARKERS =
+            List.of("test", "demo", "qa", "sample", "dummy");
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
     private final WorkoutRepository workoutRepository;
+    private final app.upload.FileStorageService fileStorageService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository, WorkoutRepository workoutRepository) {
+    private final FollowRequestRepository followRequestRepository;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, FollowRepository followRepository,
+                       WorkoutRepository workoutRepository, app.upload.FileStorageService fileStorageService, FollowRequestRepository followRequestRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.followRepository = followRepository;
         this.workoutRepository = workoutRepository;
+        this.fileStorageService = fileStorageService;
+        this.followRequestRepository = followRequestRepository;
     }
 
     @Override
@@ -126,38 +136,13 @@ public class UserService implements UserDetailsService {
                 )).toList();
     }
 
-    private static final java.util.Set<String> ALLOWED_AVATAR_TYPES =
-            java.util.Set.of("image/jpeg", "image/png", "image/webp");
-
     public UserResponse updateAvatar(UUID userId, org.springframework.web.multipart.MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("No image provided");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_AVATAR_TYPES.contains(contentType)) {
-            throw new IllegalArgumentException("Only JPEG, PNG or WebP images are allowed");
-        }
+        String url = fileStorageService.storeImage(file, "avatars", userId.toString());
 
-        String extension = switch (contentType) {
-            case "image/png" -> "png";
-            case "image/webp" -> "webp";
-            default -> "jpg";
-        };
-
-        try {
-            java.nio.file.Path dir = java.nio.file.Paths.get("uploads", "avatars");
-            java.nio.file.Files.createDirectories(dir);
-            java.nio.file.Path target = dir.resolve(userId + "." + extension);
-            file.transferTo(target.toAbsolutePath());
-
-            User user = getUserById(userId);
-            // Cache-busting query param so clients refresh after re-upload.
-            user.setImageUrl("/uploads/avatars/" + userId + "." + extension + "?v=" + System.currentTimeMillis());
-            user.setUpdatedOn(LocalDateTime.now());
-            return DtoMapper.toUserResponse(userRepository.save(user));
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("Could not store avatar: " + e.getMessage(), e);
-        }
+        User user = getUserById(userId);
+        user.setImageUrl(url);
+        user.setUpdatedOn(LocalDateTime.now());
+        return DtoMapper.toUserResponse(userRepository.save(user));
     }
 
     public List<UserSearchResponse> getSuggestedUsers(UUID currentUserId, int limit) {
@@ -167,7 +152,9 @@ public class UserService implements UserDetailsService {
                 .collect(java.util.stream.Collectors.toSet());
 
         return userRepository.findAll().stream()
-                .filter(u -> !u.getId().equals(currentUserId) && !followedIds.contains(u.getId()))
+                .filter(u -> !u.getId().equals(currentUserId)
+                        && !followedIds.contains(u.getId())
+                        && !looksInternal(u))
                 .sorted((a, b) -> Long.compare(followRepository.countByFollowed(b), followRepository.countByFollowed(a)))
                 .limit(limit)
                 .map(u -> new UserSearchResponse(u.getId(), u.getName(), u.getUsername(), u.getImageUrl()))
@@ -180,6 +167,9 @@ public class UserService implements UserDetailsService {
 
         boolean isFollowing = !targetUserId.equals(currentUserId) && followRepository.existsByFollowerAndFollowed(currentUser, targetUser);
 
+        boolean requested = !targetUserId.equals(currentUserId)
+                && followRequestRepository.existsByRequesterAndTarget(currentUser, targetUser);
+
         return new PublicProfileResponse(
                 targetUser.getId(),
                 targetUser.getName(),
@@ -189,7 +179,23 @@ public class UserService implements UserDetailsService {
                 followRepository.countByFollowed(targetUser),
                 followRepository.countByFollower(targetUser),
                 workoutRepository.countByUserAndFinishedAtIsNotNull(targetUser),
-                isFollowing
+                isFollowing,
+                targetUser.isPrivateProfile(),
+                requested
                 );
     }
+
+    private boolean looksInternal(User u) {
+        String handle = (u.getUsername() == null ? "" : u.getUsername()).toLowerCase();
+        return INTERNAL_MARKERS.stream().anyMatch(handle::contains);
+    }
+
+    public boolean canViewWorkouts(UUID targetUserId, UUID viewerId) {
+        if (targetUserId.equals(viewerId)) return true;
+        User target = getUserById(targetUserId);
+        if (!target.isPrivateProfile()) return true;
+        return followRepository.existsByFollowerAndFollowed(getUserById(viewerId), target);
+    }
+
+
 }
