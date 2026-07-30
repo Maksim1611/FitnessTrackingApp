@@ -41,6 +41,13 @@ public class WorkoutController {
         return ResponseEntity.ok(workoutService.getWorkoutById(id, principal.getId()));
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<WorkoutResponse> updateWorkout(@PathVariable UUID id,
+                                                         @RequestBody app.web.dto.workout.UpdateWorkoutRequest request,
+                                                         @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(workoutService.updateWorkout(id, principal.getId(), request));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWorkout(@PathVariable UUID id,
                                                @AuthenticationPrincipal AuthenticationMetadata principal) {
@@ -73,5 +80,11 @@ public class WorkoutController {
                                            @AuthenticationPrincipal AuthenticationMetadata principal) {
         workoutService.deleteSet(id, setId, principal.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<WorkoutResponse>> getUserWorkouts(@PathVariable UUID userId,
+                                                                 @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(workoutService.getPublicWorkoutHistory(userId, principal.getId()));
     }
 }

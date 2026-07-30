@@ -22,4 +22,6 @@ public interface WorkoutRepository extends JpaRepository<Workout, UUID> {
     List<Workout> findFeedForUser(@Param("userId") UUID userId, Pageable pageable);
 
     long countByUserAndFinishedAtIsNotNull(User user);
+
+    boolean existsByUserAndFinishedAtIsNull(User user);
 }

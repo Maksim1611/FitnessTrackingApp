@@ -53,6 +53,12 @@ public class WorkoutService {
     @Transactional
     public WorkoutResponse startWorkout(WorkoutRequest request, UUID userId) {
         User user = userService.getUserById(userId);
+
+        // One active workout at a time — prevents duplicate/spam in-progress sessions.
+        if (workoutRepository.existsByUserAndFinishedAtIsNull(user)) {
+            throw new IllegalArgumentException("Finish or discard your current workout before starting a new one");
+        }
+
         Routine routine = null;
 
         if (request.routineId() != null) {
@@ -116,6 +122,16 @@ public class WorkoutService {
     public void deleteWorkout(UUID workoutId, UUID userId) {
         Workout workout = getOwnedWorkout(workoutId, userId);
         workoutRepository.delete(workout);
+    }
+
+    public WorkoutResponse updateWorkout(UUID workoutId, UUID userId, app.web.dto.workout.UpdateWorkoutRequest request) {
+        Workout workout = getOwnedWorkout(workoutId, userId);
+
+        if (request.name() != null && !request.name().isBlank()) {
+            workout.setName(request.name().trim());
+        }
+
+        return DtoMapper.toWorkoutResponse(workoutRepository.save(workout));
     }
 
     @Transactional
@@ -257,6 +273,18 @@ public class WorkoutService {
                 .orElseThrow(() -> new ResourceNotFoundException("Set not found in this workout"));
     }
 
+    public List<WorkoutResponse> getPublicWorkoutHistory(UUID targetUserId, UUID viewerId) {
+        User user = userService.getUserById(targetUserId);
 
+        if (!userService.canViewWorkouts(targetUserId, viewerId)) {
+            return java.util.List.of();
+        }
+
+        return workoutRepository.findAllByUserOrderByStartedAtDesc(user)
+                .stream()
+                .filter(workout -> workout.getFinishedAt() != null)
+                .map(DtoMapper::toWorkoutResponse)
+                .toList();
+    }
 
 }
