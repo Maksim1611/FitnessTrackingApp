@@ -10,6 +10,7 @@ import app.social.repository.WorkoutLikeRepository;
 import app.user.model.User;
 import app.user.service.UserService;
 import app.web.dto.social.CommentResponse;
+import app.web.dto.social.WorkoutSocialResponse;
 import app.workout.model.Workout;
 import app.workout.repository.WorkoutRepository;
 import jakarta.transaction.Transactional;
@@ -124,6 +125,15 @@ public class WorkoutSocialService {
                 comment.getUser().getImageUrl(),
                 comment.getText(),
                 comment.getCreatedAt()
+        );
+    }
+
+    public WorkoutSocialResponse getSocial(UUID workoutId, UUID userId) {
+        getWorkout(workoutId); 
+        return new WorkoutSocialResponse(
+                likeRepository.countByWorkoutId(workoutId),
+                commentRepository.countByWorkoutId(workoutId),
+                likeRepository.existsByUserIdAndWorkoutId(userId, workoutId)
         );
     }
 }

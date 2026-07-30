@@ -4,6 +4,7 @@ import app.security.AuthenticationMetadata;
 import app.social.service.WorkoutSocialService;
 import app.web.dto.social.CommentRequest;
 import app.web.dto.social.CommentResponse;
+import app.web.dto.social.WorkoutSocialResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,5 +54,11 @@ public class WorkoutSocialController {
                                               @AuthenticationPrincipal AuthenticationMetadata principal) {
         socialService.deleteComment(workoutId, commentId, principal.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/social")
+    public ResponseEntity<WorkoutSocialResponse> getSocial(@PathVariable UUID workoutId,
+                                                           @AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(socialService.getSocial(workoutId, principal.getId()));
     }
 }

@@ -2,6 +2,7 @@ package app.feed.service;
 
 import app.social.repository.WorkoutCommentRepository;
 import app.social.repository.WorkoutLikeRepository;
+import app.utils.DtoMapper;
 import app.web.dto.feed.FeedItemResponse;
 import app.workout.model.Workout;
 import app.workout.repository.WorkoutRepository;
@@ -67,7 +68,10 @@ public class FeedService {
                     prCount,
                     likeRepository.countByWorkoutId(workout.getId()),
                     commentRepository.countByWorkoutId(workout.getId()),
-                    likeRepository.existsByUserIdAndWorkoutId(userId, workout.getId())
+                    likeRepository.existsByUserIdAndWorkoutId(userId, workout.getId()),
+                    workout.getWorkoutSets() == null
+                            ? java.util.List.of()
+                            : workout.getWorkoutSets().stream().map(DtoMapper::toWorkoutSetResponse).toList()
             ));
         }
 

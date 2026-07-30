@@ -1,6 +1,9 @@
 package app.web.dto.feed;
 
+import app.web.dto.workoutSet.WorkoutSetResponse;
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record FeedItemResponse(
@@ -17,6 +20,7 @@ public record FeedItemResponse(
         int prCount,
         long likeCount,
         long commentCount,
-        boolean likedByMe
+        boolean likedByMe,
+        List<WorkoutSetResponse> sets
 ) {
 }
