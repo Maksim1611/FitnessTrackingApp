@@ -112,26 +112,25 @@ public class RoutineService {
     }
 
     private void validateSetTarget(RoutineSetTargetRequest set, ExerciseType type) {
+        // Routine targets are guidance, not a log — target WEIGHT is optional
+        // (left blank until the workout). Rep/duration targets give the routine
+        // meaningful structure, so those stay required for their types.
         switch (type) {
             case WEIGHT_REPS -> {
-                if (set.targetWeight() == null)
-                    throw new IllegalArgumentException("Weight is required for WEIGHT_REPS exercise");
                 if (set.targetRepsMin() == null)
-                    throw new IllegalArgumentException("Reps are required for WEIGHT_REPS exercise");
+                    throw new IllegalArgumentException("Add target reps for this exercise");
             }
             case BODYWEIGHT -> {
                 if (set.targetRepsMin() == null)
-                    throw new IllegalArgumentException("Reps are required for BODYWEIGHT exercise");
+                    throw new IllegalArgumentException("Add target reps for this exercise");
             }
             case DURATION -> {
                 if (set.targetDurationSeconds() == null)
-                    throw new IllegalArgumentException("Duration is required for DURATION exercise");
+                    throw new IllegalArgumentException("Add a target time for this exercise");
             }
             case WEIGHT_DURATION -> {
-                if (set.targetWeight() == null)
-                    throw new IllegalArgumentException("Weight is required for WEIGHT_DURATION exercise");
                 if (set.targetDurationSeconds() == null)
-                    throw new IllegalArgumentException("Duration is required for WEIGHT_DURATION exercise");
+                    throw new IllegalArgumentException("Add a target time for this exercise");
             }
         }
     }

@@ -44,6 +44,8 @@ public class DtoMapper {
         }
         if (request.bio() != null) {
             user.setBio(request.bio());
+        } if (request.privateProfile() != null) {
+            user.setPrivateProfile(request.privateProfile());
         }
     }
 
@@ -57,7 +59,8 @@ public class DtoMapper {
                 user.getBirthDate(),
                 user.getSex(),
                 user.getBio(),
-                user.getCreatedOn()
+                user.getCreatedOn(),
+                user.isPrivateProfile()
         );
     }
 

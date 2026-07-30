@@ -55,4 +55,28 @@ public class FollowController {
         PublicProfileResponse profile = userService.getPublicProfile(id, principal.getId());
         return ResponseEntity.ok(profile);
     }
+
+    @GetMapping("/follow-requests")
+    public ResponseEntity<List<UserSearchResponse>> getFollowRequests(@AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(followService.getFollowRequests(principal.getId()));
+    }
+
+    @GetMapping("/follow-requests/count")
+    public ResponseEntity<Long> getFollowRequestCount(@AuthenticationPrincipal AuthenticationMetadata principal) {
+        return ResponseEntity.ok(followService.getFollowRequestCount(principal.getId()));
+    }
+
+    @PostMapping("/follow-requests/{requesterId}/accept")
+    public ResponseEntity<Void> acceptFollowRequest(@PathVariable UUID requesterId,
+                                                    @AuthenticationPrincipal AuthenticationMetadata principal) {
+        followService.acceptFollowRequest(requesterId, principal.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/follow-requests/{requesterId}")
+    public ResponseEntity<Void> denyFollowRequest(@PathVariable UUID requesterId,
+                                                  @AuthenticationPrincipal AuthenticationMetadata principal) {
+        followService.denyFollowRequest(requesterId, principal.getId());
+        return ResponseEntity.noContent().build();
+    }
 }

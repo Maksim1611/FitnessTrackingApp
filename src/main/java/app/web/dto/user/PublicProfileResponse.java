@@ -11,6 +11,8 @@ public record PublicProfileResponse(
         long followerCount,
         long followingCount,
         long workoutCount,
-        boolean isFollowing
+        boolean isFollowing,
+        boolean isPrivate,
+        boolean requested
 ) {
 }

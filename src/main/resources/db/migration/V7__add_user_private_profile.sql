@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD COLUMN `private_profile` bit(1) NOT NULL DEFAULT b'0';

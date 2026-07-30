@@ -3,5 +3,7 @@ package app.social.model;
 public enum NotificationType {
     FOLLOW,
     LIKE,
-    COMMENT
+    COMMENT,
+    FOLLOW_REQUEST,
+    FOLLOW_ACCEPTED
 }

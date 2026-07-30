@@ -15,5 +15,6 @@ public record UserResponse(
         LocalDate birthDate,
         Sex sex,
         String bio,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean privateProfile
 ) {}

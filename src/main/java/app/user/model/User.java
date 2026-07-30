@@ -68,4 +68,8 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Workout> workouts;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean privateProfile = false;
 }

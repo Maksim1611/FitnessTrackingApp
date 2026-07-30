@@ -12,6 +12,7 @@ public record EditProfileRequest(
         String imageUrl,
         LocalDate birthDate,
         Sex sex,
-        String bio
+        String bio,
+        Boolean privateProfile
 ) {
 }
